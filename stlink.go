@@ -2,7 +2,7 @@ package stlink
 
 import (
 	"encoding/hex"
-	"fmt"
+	"errors"
 
 	"github.com/google/gousb"
 )
@@ -29,15 +29,19 @@ const (
 	stlinkV21PID gousb.ID = 0x374b
 )
 
-func (s *Stlink) Probe() ([]Device, error) {
-	var devlist []Device
-	//s.usbctx.Debug(999)
-	devs, err := s.usbctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
+func (s *Stlink) probeAll() ([]*gousb.Device, error) {
+	return s.usbctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		if desc.Vendor == stVID && (desc.Product == stlinkV21PID || desc.Product == stlinkV2PID) {
 			return true
 		}
 		return false
 	})
+}
+
+func (s *Stlink) Probe() ([]Device, error) {
+	var devlist []Device
+
+	devs, err := s.probeAll()
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +54,12 @@ func (s *Stlink) Probe() ([]Device, error) {
 		// 3 is the iSerialNumber, no constant in gousb for this
 		sd, err := d.GetStringDescriptor(3)
 		if err != nil {
-			fmt.Printf("error retrieving sd: %v\n", err)
+			return nil, err
 		}
 		dev := Device{
 			desc:         d.Desc,
 			SerialNumber: sd,
+			opened:       false,
 		}
 		// We check if the device ID is hex-encoded, otherwise do so
 		if _, err := hex.DecodeString(sd); err != nil {
@@ -63,4 +68,37 @@ func (s *Stlink) Probe() ([]Device, error) {
 		devlist = append(devlist, dev)
 	}
 	return devlist, nil
+}
+
+func (s *Stlink) OpenDevice(serial string) (*Device, error) {
+	devs, err := s.probeAll()
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range devs {
+		// 3 is the iSerialNumber, no constant in gousb for this
+		sd, err := d.GetStringDescriptor(3)
+		if err != nil {
+			return nil, err
+		}
+		dev := &Device{
+			desc:         d.Desc,
+			dev:          d,
+			SerialNumber: sd,
+			opened:       true,
+		}
+		// We check if the device ID is hex-encoded, otherwise do so
+		if _, err := hex.DecodeString(sd); err != nil {
+			dev.SerialNumber = hex.EncodeToString([]byte(sd))
+		}
+		if dev.SerialNumber == serial {
+			if err := dev.init(); err != nil {
+				dev.Close()
+				return nil, err
+			}
+			return dev, nil
+		}
+		dev.Close()
+	}
+	return nil, errors.New("Device not found")
 }
