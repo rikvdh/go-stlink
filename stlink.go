@@ -7,10 +7,12 @@ import (
 	"github.com/google/gousb"
 )
 
+// Stlink context structure
 type Stlink struct {
 	usbctx *gousb.Context
 }
 
+// New creates a new Stlink context
 func New() (*Stlink, error) {
 	s := &Stlink{
 		usbctx: gousb.NewContext(),
@@ -18,6 +20,7 @@ func New() (*Stlink, error) {
 	return s, nil
 }
 
+// Close closes the Slink context
 func (s *Stlink) Close() error {
 	return s.usbctx.Close()
 }
@@ -38,6 +41,9 @@ func (s *Stlink) probeAll() ([]*gousb.Device, error) {
 	})
 }
 
+// Probe searches for a list of devices and returns them.
+// returned devices don't need to be closed but can't be used either.
+// Use OpenDevice to open a device by SerialNumber
 func (s *Stlink) Probe() ([]Device, error) {
 	var devlist []Device
 
@@ -70,6 +76,9 @@ func (s *Stlink) Probe() ([]Device, error) {
 	return devlist, nil
 }
 
+// OpenDevice opens a device by serial number. Giving serial
+// as an empty string, OpenDevice takes the first ST-link
+// it can find
 func (s *Stlink) OpenDevice(serial string) (*Device, error) {
 	devs, err := s.probeAll()
 	if err != nil {
@@ -91,7 +100,7 @@ func (s *Stlink) OpenDevice(serial string) (*Device, error) {
 		if _, err := hex.DecodeString(sd); err != nil {
 			dev.SerialNumber = hex.EncodeToString([]byte(sd))
 		}
-		if dev.SerialNumber == serial {
+		if dev.SerialNumber == serial || serial == "" {
 			if err := dev.init(); err != nil {
 				dev.Close()
 				return nil, err
@@ -100,5 +109,5 @@ func (s *Stlink) OpenDevice(serial string) (*Device, error) {
 		}
 		dev.Close()
 	}
-	return nil, errors.New("Device not found")
+	return nil, errors.New("device not found")
 }

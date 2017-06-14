@@ -1,15 +1,19 @@
 package stlink
 
 import (
+	"errors"
+
 	"github.com/google/gousb"
 )
 
 const (
+	cmdSize           = 16
 	stlinkUsbInEp     = 1
 	stlinkUsbOutEpV2  = 2
 	stlinkUsbOutEpV21 = 1
 )
 
+// Device represents a ST-link device
 type Device struct {
 	desc         *gousb.DeviceDesc
 	dev          *gousb.Device
@@ -41,6 +45,7 @@ func (d *Device) init() error {
 	return err
 }
 
+// Close closes the device when needed
 func (d *Device) Close() error {
 	if d.opened {
 		if d.doneFunc != nil {
@@ -52,11 +57,17 @@ func (d *Device) Close() error {
 }
 
 func (d *Device) write(b []byte) error {
+	if !d.opened {
+		return errors.New("device closed")
+	}
 	_, err := d.outEp.Write(b)
 	return err
 }
 
 func (d *Device) read(n int) ([]byte, error) {
+	if !d.opened {
+		return nil, errors.New("device closed")
+	}
 	rx := make([]byte, n, n)
 	_, err := d.inEp.Read(rx)
 	if err != nil {
@@ -64,70 +75,3 @@ func (d *Device) read(n int) ([]byte, error) {
 	}
 	return rx, nil
 }
-
-const cmdSize = 16
-
-type StlinkMode uint8
-
-const (
-	StlinkModeUnknown StlinkMode = 0xff
-	StlinkModeDfu     StlinkMode = 0x00
-	StlinkModeMass    StlinkMode = 0x01
-	StlinkModeDebug   StlinkMode = 0x02
-)
-
-func (s StlinkMode) String() string {
-	switch s {
-	case StlinkModeDebug:
-		return "debug"
-	case StlinkModeDfu:
-		return "dfu"
-	case StlinkModeMass:
-		return "mass"
-	}
-	return "unknown"
-}
-
-func (d *Device) GetMode() (StlinkMode, error) {
-	tx := make([]byte, cmdSize, cmdSize)
-	tx[0] = stlinkCmdGetCurrentMode
-	err := d.write(tx)
-	if err != nil {
-		return StlinkModeUnknown, err
-	}
-	rx, err := d.read(2)
-	if err != nil {
-		return StlinkModeUnknown, err
-	}
-	switch rx[0] {
-	case uint8(StlinkModeDfu), uint8(StlinkModeMass), uint8(StlinkModeDebug):
-		return StlinkMode(rx[0]), nil
-	default:
-		return StlinkModeUnknown, nil
-	}
-}
-
-type StlinkStatus uint8
-
-const (
-	StlinkStatusUnknown     StlinkStatus = 0xff
-	StlinkStatusCoreRunning              = 0x80
-	StlinkStatusCoreHalted               = 0x81
-)
-
-type StlinkClockSpeed uint16
-
-const (
-	StlinkClockSpeed4000 StlinkClockSpeed = 0
-	StlinkClockSpeed1800                  = 1
-	StlinkClockSpeed1200                  = 2
-	StlinkClockSpeed950                   = 3
-	StlinkClockSpeed480                   = 7
-	StlinkClockSpeed240                   = 15
-	StlinkClockSpeed125                   = 31
-	StlinkClockSpeed100                   = 40
-	StlinkClockSpeed50                    = 79
-	StlinkClockSpeed25                    = 158
-	StlinkClockSpeed15                    = 265
-	StlinkClockSpeed5                     = 798
-)
