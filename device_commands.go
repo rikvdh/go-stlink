@@ -3,15 +3,16 @@ package stlink
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 )
 
 type StlinkMode uint8
 
 const (
 	StlinkModeUnknown StlinkMode = 0xff
-	StlinkModeDfu                = 0x00
-	StlinkModeMass               = 0x01
-	StlinkModeDebug              = 0x02
+	StlinkModeDfu     StlinkMode = 0x00
+	StlinkModeMass    StlinkMode = 0x01
+	StlinkModeDebug   StlinkMode = 0x02
 )
 
 func (s StlinkMode) String() string {
@@ -29,7 +30,7 @@ func (s StlinkMode) String() string {
 // GetMode reads the mode for an ST-link, see StlinkMode
 func (d *Device) GetMode() (StlinkMode, error) {
 	tx := make([]byte, cmdSize, cmdSize)
-	tx[0] = stlinkCmdGetCurrentMode
+	tx[0] = byte(stlinkCmdGetCurrentMode)
 	err := d.write(tx)
 	if err != nil {
 		return StlinkModeUnknown, err
@@ -46,9 +47,28 @@ func (d *Device) GetMode() (StlinkMode, error) {
 	}
 }
 
+func (d *Device) GetVersion() (string, error) {
+	tx := make([]byte, cmdSize, cmdSize)
+	tx[0] = byte(stlinkCmdGetVersion)
+	err := d.write(tx)
+	if err != nil {
+		return "", err
+	}
+	rx, err := d.read(6)
+	if err != nil {
+		return "", err
+	}
+
+	stlink := uint8((rx[0] & 0xf0) >> 4)
+	jtag := uint8(((rx[0] & 0x0f) << 2) | ((rx[1] & 0xc0) >> 6))
+	swim := uint8(rx[1] & 0x3f)
+
+	return fmt.Sprintf("V%dJ%dS%d", stlink, jtag, swim), nil
+}
+
 func (d *Device) GetTargetVoltage() (float32, error) {
 	tx := make([]byte, cmdSize, cmdSize)
-	tx[0] = stlinkCmdGetTargetVoltage
+	tx[0] = byte(stlinkCmdGetTargetVoltage)
 	err := d.write(tx)
 	if err != nil {
 		return 0, err

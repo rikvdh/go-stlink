@@ -23,6 +23,7 @@ type Device struct {
 	inEp         *gousb.InEndpoint
 	SerialNumber string
 	opened       bool
+	coreState    StlinkStatus
 }
 
 func (d *Device) init() error {
@@ -42,6 +43,7 @@ func (d *Device) init() error {
 	}
 
 	d.outEp, err = d.interf.OutEndpoint(ep)
+	d.coreState = StlinkStatusUnknown
 	return err
 }
 
@@ -54,6 +56,18 @@ func (d *Device) Close() error {
 		return d.dev.Close()
 	}
 	return nil
+}
+
+func (d *Device) GetName() (string, error) {
+	switch d.desc.Product {
+	case stlinkV21PID:
+		return "ST-link V2-1", nil
+	case stlinkV1PID:
+		return "ST-link V1", nil
+	case stlinkV2PID:
+		return "ST-link V2", nil
+	}
+	return "", errors.New("unknown device")
 }
 
 func (d *Device) write(b []byte) error {
