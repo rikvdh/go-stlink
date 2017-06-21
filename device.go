@@ -43,7 +43,10 @@ func (d *Device) init() error {
 	}
 
 	d.outEp, err = d.interf.OutEndpoint(ep)
-	d.coreState = StlinkStatusUnknown
+	if err != nil {
+		return err
+	}
+	_, err = d.Status()
 	return err
 }
 
@@ -58,7 +61,7 @@ func (d *Device) Close() error {
 	return nil
 }
 
-func (d *Device) GetName() (string, error) {
+func (d *Device) Name() (string, error) {
 	switch d.desc.Product {
 	case stlinkV21PID:
 		return "ST-link V2-1", nil

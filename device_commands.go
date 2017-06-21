@@ -28,7 +28,7 @@ func (s StlinkMode) String() string {
 }
 
 // GetMode reads the mode for an ST-link, see StlinkMode
-func (d *Device) GetMode() (StlinkMode, error) {
+func (d *Device) Mode() (StlinkMode, error) {
 	tx := make([]byte, cmdSize, cmdSize)
 	tx[0] = byte(stlinkCmdGetCurrentMode)
 	err := d.write(tx)
@@ -47,7 +47,7 @@ func (d *Device) GetMode() (StlinkMode, error) {
 	}
 }
 
-func (d *Device) GetVersion() (string, error) {
+func (d *Device) Version() (string, error) {
 	tx := make([]byte, cmdSize, cmdSize)
 	tx[0] = byte(stlinkCmdGetVersion)
 	err := d.write(tx)
@@ -66,7 +66,7 @@ func (d *Device) GetVersion() (string, error) {
 	return fmt.Sprintf("V%dJ%dS%d", stlink, jtag, swim), nil
 }
 
-func (d *Device) GetTargetVoltage() (float32, error) {
+func (d *Device) TargetVoltage() (float32, error) {
 	tx := make([]byte, cmdSize, cmdSize)
 	tx[0] = byte(stlinkCmdGetTargetVoltage)
 	err := d.write(tx)
