@@ -1,6 +1,9 @@
 package stlink
 
-import "errors"
+import (
+	"encoding/binary"
+	"errors"
+)
 
 type StlinkMode uint8
 
@@ -44,5 +47,20 @@ func (d *Device) GetMode() (StlinkMode, error) {
 }
 
 func (d *Device) GetTargetVoltage() (float32, error) {
-	return 0.0, errors.New("not implemented")
+	tx := make([]byte, cmdSize, cmdSize)
+	tx[0] = stlinkCmdGetTargetVoltage
+	err := d.write(tx)
+	if err != nil {
+		return 0, err
+	}
+
+	var v [2]int32
+	if err := binary.Read(d.inEp, binary.LittleEndian, &v); err != nil {
+		return 0, err
+	}
+
+	if v[0] == 0 {
+		return 0, errors.New("measured voltage is zero")
+	}
+	return 2.4 * float32(v[1]) / float32(v[0]), nil
 }

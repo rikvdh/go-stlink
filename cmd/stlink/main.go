@@ -26,6 +26,22 @@ func main() {
 		}
 		for _, d := range devs {
 			fmt.Printf("STlink: %s\n", d.SerialNumber)
+			dv, err := s.OpenDevice(d.SerialNumber)
+			if err == nil {
+				v, err := dv.GetTargetVoltage()
+				if err == nil {
+					fmt.Printf(" voltage: %.3f\n", v)
+				} else {
+					fmt.Printf(" voltage: %v\n", err)
+				}
+				m, err := dv.GetMode()
+				if err == nil {
+					fmt.Printf(" mode:    %s\n", m)
+				} else {
+					fmt.Printf(" mode:    %v\n", err)
+				}
+				dv.Close()
+			}
 		}
 	} else {
 		dev, err := s.OpenDevice(*serial)
