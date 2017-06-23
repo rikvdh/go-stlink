@@ -87,9 +87,15 @@ func probeDevice(s *stlink.Stlink, serial string) {
 	}
 	dev, err := dv.DevID()
 	if err == nil {
-		fmt.Printf(" chip:    %03x\n", dev)
+		fmt.Printf(" dev:     %03x\n", dev)
 	} else {
-		fmt.Printf(" chip:    %v\n", err)
+		fmt.Printf(" dev:     %v\n", err)
+	}
+	pn, err := dv.CortexMPartNumber()
+	if err == nil {
+		fmt.Printf(" part-no: %s\n", pn)
+	} else {
+		fmt.Printf(" part-no: %v\n", err)
 	}
 	dv.Close()
 }
