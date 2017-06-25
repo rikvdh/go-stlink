@@ -193,23 +193,24 @@ const (
 )
 
 func (d *Device) ChipID() (uint32, error) {
-	return 0, nil
-	//stlink2_get_cpuid(dev);
-	//enum stlink2_cortexm_cpuid_partno partno = stlink2_cortexm_cpuid_get_partno(dev->mcu.cpuid);
-
-	/*if (partno == STLINK2_CORTEXM_CPUID_PARTNO_M0 ||
-	    partno == STLINK2_CORTEXM_CPUID_PARTNO_M0_PLUS)
-		stlink2_read_debug32(dev, cortexMIDCodeM0Address, &dev->mcu.chipid);
-	else*/
-	//	stlink2_read_debug32(dev, cortexMIDCodeAddress, &dev->mcu.chipid);
-
-	//return dev->mcu.chipid;
+	pn, err := d.CortexMPartNumber()
+	if err != nil {
+		return 0, err
+	}
+	if pn == CortexMPartNumberM0 || pn == CortexMPartNumberM0Plus {
+		return d.Read32(cortexMIDCodeM0Address)
+	}
+	return d.Read32(cortexMIDCodeAddress)
 }
 
 const cortexMCpuIDRegisterAddress uint32 = 0xE000ED00
 
 func (d *Device) CpuID() (uint32, error) {
-	return d.Read32(cortexMCpuIDRegisterAddress)
+	id, err := d.Read32(cortexMCpuIDRegisterAddress)
+	if err == nil {
+		d.cpuID = id
+	}
+	return id, err
 }
 
 func (d *Device) DevID() (uint16, error) {

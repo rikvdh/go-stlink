@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	ofile         = flag.String("outputfile", "targets_gen.go", "output file")
 	url           = flag.String("url", "http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC1169.json", "URL where the json-file comes from")
 	neededColumns = map[string]string{
 		"Part Number":         "type",
@@ -79,6 +80,7 @@ type (
 )
 
 func main() {
+	flag.Parse()
 	rep, err := http.Get(*url)
 	if err != nil {
 		panic(err)
@@ -121,12 +123,17 @@ func main() {
 		}
 		targets = append(targets, target)
 	}
-	f, err := os.Create("targets_gen.go")
-	if err != nil {
-		panic(err)
+	w := os.Stdout
+	var f *os.File
+	if *ofile != "" {
+		var err error
+		f, err = os.Create(*ofile)
+		if err != nil {
+			panic(err)
+		}
+		w = f
 	}
-	defer f.Close()
-	packageTemplate.Execute(f, struct {
+	packageTemplate.Execute(w, struct {
 		Timestamp time.Time
 		URL       string
 		Targets   []stlink.Target
@@ -135,5 +142,8 @@ func main() {
 		URL:       *url,
 		Targets:   targets,
 	})
+	if f != nil {
+		f.Close()
+	}
 	//
 }

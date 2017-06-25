@@ -24,6 +24,7 @@ func main() {
 		if err != nil {
 			logrus.Fatalf("probe failed: %v\n", err)
 		}
+		logrus.Infof("found %d devices", len(devs))
 		for _, d := range devs {
 			probeDevice(s, d.SerialNumber)
 		}
@@ -31,6 +32,7 @@ func main() {
 		probeDevice(s, *serial)
 	}
 }
+
 func probeDevice(s *stlink.Stlink, serial string) {
 	fmt.Printf("STlink: %s\n", serial)
 	dv, err := s.OpenDevice(serial)
@@ -43,12 +45,6 @@ func probeDevice(s *stlink.Stlink, serial string) {
 	} else {
 		fmt.Printf(" name:    %v\n", err)
 	}
-	v, err := dv.TargetVoltage()
-	if err == nil {
-		fmt.Printf(" voltage: %.3f\n", v)
-	} else {
-		fmt.Printf(" voltage: %v\n", err)
-	}
 	m, err := dv.Mode()
 	if err == nil {
 		fmt.Printf(" mode:    %s\n", m)
@@ -60,6 +56,16 @@ func probeDevice(s *stlink.Stlink, serial string) {
 		fmt.Printf(" version: %s\n", ver)
 	} else {
 		fmt.Printf(" version: %v\n", err)
+	}
+	v, err := dv.TargetVoltage()
+	if err == nil {
+		fmt.Printf(" voltage: %.3f\n", v)
+	} else {
+		fmt.Printf(" voltage: %v\n", err)
+	}
+	if v < 1 {
+		fmt.Printf(" target voltage too low!\n")
+		return
 	}
 	status, err := dv.Status()
 	if err == nil {

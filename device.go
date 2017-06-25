@@ -24,6 +24,7 @@ type Device struct {
 	SerialNumber string
 	opened       bool
 	coreState    StlinkStatus
+	cpuID        uint32
 }
 
 func (d *Device) init() error {
