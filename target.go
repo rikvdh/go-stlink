@@ -5,8 +5,8 @@ package stlink
 type Target struct {
 	Type       string
 	Core       string
-	Frequency  string
-	FlashSize  string
-	EepromSize string
-	SramSize   string
+	Frequency  uint
+	FlashSize  uint
+	EepromSize uint
+	SramSize   uint
 }

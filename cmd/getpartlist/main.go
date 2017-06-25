@@ -5,6 +5,7 @@ import (
 	"flag"
 	"net/http"
 	"os"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -37,10 +38,10 @@ var stmChips = map[CortexMPartNumber][]Target{
 		{
 			Type:       "{{ $target.Type }}",
 			Core:       "{{ $target.Core }}",
-			Frequency:  "{{ printf "%s" $target.Frequency }}",
-			FlashSize:  "{{ printf "%s" $target.FlashSize }}",
-			EepromSize: "{{ printf "%s" $target.EepromSize }}",
-			SramSize:   "{{ printf "%s" $target.SramSize }}",
+			Frequency:  {{ $target.Frequency }},
+			FlashSize:  {{ $target.FlashSize }},
+			EepromSize: {{ $target.EepromSize }},
+			SramSize:   {{ $target.SramSize }},
 		},
 {{ end }}
 	},
@@ -115,13 +116,17 @@ func main() {
 				case "core":
 					target.Core = devProp.Value
 				case "freq":
-					target.Frequency = devProp.Value
+					x, _ := strconv.ParseUint(devProp.Value, 10, 32)
+					target.Frequency = uint(x)
 				case "flash_size":
-					target.FlashSize = devProp.Value
+					x, _ := strconv.ParseUint(devProp.Value, 10, 32)
+					target.FlashSize = uint(x)
 				case "eeprom_size":
-					target.EepromSize = devProp.Value
+					x, _ := strconv.ParseUint(devProp.Value, 10, 32)
+					target.EepromSize = uint(x)
 				case "sram_size":
-					target.SramSize = devProp.Value
+					x, _ := strconv.ParseUint(devProp.Value, 10, 32)
+					target.SramSize = uint(x)
 				}
 			}
 		}
