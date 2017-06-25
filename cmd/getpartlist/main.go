@@ -3,17 +3,17 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"html/template"
 	"net/http"
 	"os"
+	"text/template"
 	"time"
 
-	stlink "github.com/rikvdh/go-stlink"
+	"github.com/rikvdh/go-stlink"
 )
 
 var (
 	ofile         = flag.String("outputfile", "targets_gen.go", "output file")
-	url           = flag.String("url", "http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC1169.json", "URL where the json-file comes from")
+	urlPartlist   = flag.String("url", "http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC1169.json", "URL where the json-file comes from")
 	neededColumns = map[string]string{
 		"Part Number":         "type",
 		"Core":                "core",
@@ -30,17 +30,21 @@ var (
 // using data from {{ .URL }}
 package stlink
 
-var stmChips = []Target{
-{{- range .Targets }}
-	{
-		Type:       "{{ printf "%s" .Type }}",
-		Core:       "{{ printf "%s" .Core }}",
-		Frequency:  "{{ printf "%s" .Frequency }}",
-		FlashSize:  "{{ printf "%s" .FlashSize }}",
-		EepromSize: "{{ printf "%s" .EepromSize }}",
-		SramSize:   "{{ printf "%s" .SramSize }}",
+var stmChips = map[CortexMPartNumber][]Target{
+{{ range $core, $targets := .Targets }}
+	{{ $core }}: {
+{{ range $i, $target := $targets }}
+		{
+			Type:       "{{ $target.Type }}",
+			Core:       "{{ $target.Core }}",
+			Frequency:  "{{ printf "%s" $target.Frequency }}",
+			FlashSize:  "{{ printf "%s" $target.FlashSize }}",
+			EepromSize: "{{ printf "%s" $target.EepromSize }}",
+			SramSize:   "{{ printf "%s" $target.SramSize }}",
+		},
+{{ end }}
 	},
-{{- end }}
+{{ end }}
 }
 `))
 )
@@ -81,7 +85,7 @@ type (
 
 func main() {
 	flag.Parse()
-	rep, err := http.Get(*url)
+	rep, err := http.Get(*urlPartlist)
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +103,7 @@ func main() {
 			}
 		}
 	}
-	var targets []stlink.Target
+	targets := map[string][]stlink.Target{}
 	for _, dev := range dat.Rows {
 		target := stlink.Target{}
 		for _, devProp := range dev.Cells {
@@ -121,7 +125,8 @@ func main() {
 				}
 			}
 		}
-		targets = append(targets, target)
+		pn := stlink.CortexMStringToPartNumber(target.Core).ConstString()
+		targets[pn] = append(targets[pn], target)
 	}
 	w := os.Stdout
 	var f *os.File
@@ -136,10 +141,10 @@ func main() {
 	packageTemplate.Execute(w, struct {
 		Timestamp time.Time
 		URL       string
-		Targets   []stlink.Target
+		Targets   map[string][]stlink.Target
 	}{
 		Timestamp: time.Now(),
-		URL:       *url,
+		URL:       *urlPartlist,
 		Targets:   targets,
 	})
 	if f != nil {
