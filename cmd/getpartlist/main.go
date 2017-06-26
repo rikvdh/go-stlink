@@ -9,6 +9,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/rikvdh/go-stlink"
 )
 
@@ -32,19 +33,9 @@ var (
 package stlink
 
 var stmChips = map[CortexMPartNumber][]Target{
-{{ range $core, $targets := .Targets }}
-	{{ $core }}: {
-{{ range $i, $target := $targets }}
-		{
-			Type:       "{{ $target.Type }}",
-			Core:       "{{ $target.Core }}",
-			Frequency:  {{ $target.Frequency }},
-			FlashSize:  {{ $target.FlashSize }},
-			EepromSize: {{ $target.EepromSize }},
-			SramSize:   {{ $target.SramSize }},
-		},
-{{ end }}
-	},
+{{ range $core, $targets := .Targets }}	{{ $core }}: {
+{{ range $i, $target := $targets }}		{ Type: "{{ $target.Type }}", Frequency: {{ $target.Frequency }}, FlashSize: {{ $target.FlashSize }}, EepromSize: {{ $target.EepromSize }}, SramSize: {{ $target.SramSize }} },
+{{ end }}	},
 {{ end }}
 }
 `))
@@ -84,6 +75,44 @@ type (
 	}
 )
 
+func cortexMPartNumberConstString(c stlink.CortexMPartNumber) string {
+	switch c {
+	case stlink.CortexMPartNumberM0:
+		return "CortexMPartNumberM0"
+	case stlink.CortexMPartNumberM0Plus:
+		return "CortexMPartNumberM0Plus"
+	case stlink.CortexMPartNumberM1:
+		return "CortexMPartNumberM1"
+	case stlink.CortexMPartNumberM3:
+		return "CortexMPartNumberM3"
+	case stlink.CortexMPartNumberM4:
+		return "CortexMPartNumberM4"
+	case stlink.CortexMPartNumberM7:
+		return "CortexMPartNumberM7"
+	}
+	logrus.Warnf("Unknown Cortex-M pn: 0x%03x", c)
+	return "CortexMPartNumberUnknown"
+}
+
+func cortexMStringToPartNumber(s string) stlink.CortexMPartNumber {
+	switch s {
+	case "ARM Cortex-M0":
+		return stlink.CortexMPartNumberM0
+	case "ARM Cortex-M0+":
+		return stlink.CortexMPartNumberM0Plus
+	case "ARM Cortex-M1":
+		return stlink.CortexMPartNumberM1
+	case "ARM Cortex-M3":
+		return stlink.CortexMPartNumberM3
+	case "ARM Cortex-M4":
+		return stlink.CortexMPartNumberM4
+	case "ARM Cortex-M7":
+		return stlink.CortexMPartNumberM7
+	}
+	logrus.Warnf("Unknown Cortex-M part number: '%s'", s)
+	return stlink.CortexMPartNumberUnknown
+}
+
 func main() {
 	flag.Parse()
 	rep, err := http.Get(*urlPartlist)
@@ -107,6 +136,7 @@ func main() {
 	targets := map[string][]stlink.Target{}
 	for _, dev := range dat.Rows {
 		target := stlink.Target{}
+		core := false
 		for _, devProp := range dev.Cells {
 			t, ok := colMapping[devProp.ColumnID]
 			if ok {
@@ -114,7 +144,8 @@ func main() {
 				case "type":
 					target.Type = devProp.Value
 				case "core":
-					target.Core = devProp.Value
+					target.Core = cortexMStringToPartNumber(devProp.Value)
+					core = true
 				case "freq":
 					x, _ := strconv.ParseUint(devProp.Value, 10, 32)
 					target.Frequency = uint(x)
@@ -130,8 +161,12 @@ func main() {
 				}
 			}
 		}
-		pn := stlink.CortexMStringToPartNumber(target.Core).ConstString()
-		targets[pn] = append(targets[pn], target)
+		if core {
+			pn := cortexMPartNumberConstString(target.Core)
+			targets[pn] = append(targets[pn], target)
+		} else {
+			logrus.Warnf("missing core for: %s", target.Type)
+		}
 	}
 	w := os.Stdout
 	var f *os.File

@@ -4,7 +4,7 @@ package stlink
 
 type Target struct {
 	Type       string
-	Core       string
+	Core       CortexMPartNumber
 	Frequency  uint
 	FlashSize  uint
 	EepromSize uint
