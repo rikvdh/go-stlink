@@ -103,5 +103,11 @@ func probeDevice(s *stlink.Stlink, serial string) {
 	} else {
 		fmt.Printf(" part-no: %v\n", err)
 	}
+	sz, err := dv.FlashSize()
+	if err == nil {
+		fmt.Printf(" flash:   %d\n", sz)
+	} else {
+		fmt.Printf(" flash:   %v\n", err)
+	}
 	dv.Close()
 }
