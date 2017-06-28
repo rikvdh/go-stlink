@@ -48,6 +48,30 @@ func (d *Device) init() error {
 	if err != nil {
 		return err
 	}
+
+	mode, err := d.Mode()
+	if err != nil {
+		return err
+	}
+
+	if mode == StlinkModeDfu {
+		err := d.ExitDFUMode()
+		if err != nil {
+			return nil
+		}
+	}
+
+	mode, err = d.Mode()
+	if err != nil {
+		return err
+	}
+	if mode != StlinkModeDebug {
+		err := d.EnterSWDMode()
+		if err != nil {
+			return err
+		}
+	}
+
 	_, err = d.Status()
 	return err
 }

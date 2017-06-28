@@ -43,7 +43,7 @@ func main() {
 			}
 			defer dv.Close()
 
-			if err := dv.CoreResetHalt(); err != nil {
+			if err := dv.ForceDebug(); err != nil {
 				panic(err)
 			}
 			fmt.Printf("%s", dv)
