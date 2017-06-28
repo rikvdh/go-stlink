@@ -10,6 +10,10 @@ import (
 
 var (
 	serial = flag.String("serial", "", "ST-link serial, probe when empty")
+	flash  = flag.Bool("f", false, "flash or no..")
+	halt   = flag.Bool("h", false, "halt the core")
+	run    = flag.Bool("r", false, "run")
+	reset  = flag.Bool("re", false, "reset")
 )
 
 func main() {
@@ -29,7 +33,68 @@ func main() {
 			probeDevice(s, d.SerialNumber)
 		}
 	} else {
-		probeDevice(s, *serial)
+		if *flash {
+			runFlash(s, *serial)
+		} else if *halt {
+			logrus.Infof("stlink: %s", *serial)
+			dv, err := s.OpenDevice(*serial)
+			if err != nil {
+				panic(err)
+			}
+			defer dv.Close()
+
+			if err := dv.CoreResetHalt(); err != nil {
+				panic(err)
+			}
+			fmt.Printf("%s", dv)
+		} else if *run {
+			logrus.Infof("stlink: %s", *serial)
+			dv, err := s.OpenDevice(*serial)
+			if err != nil {
+				panic(err)
+			}
+			defer dv.Close()
+			panic(dv.Run())
+		} else if *reset {
+			logrus.Infof("stlink: %s", *serial)
+			dv, err := s.OpenDevice(*serial)
+			if err != nil {
+				panic(err)
+			}
+			defer panic(dv.HardReset())
+			dv.Close()
+		} else {
+			probeDevice(s, *serial)
+		}
+	}
+}
+
+func runFlash(s *stlink.Stlink, serial string) {
+	logrus.SetLevel(logrus.DebugLevel)
+	logrus.Debugf("stlink: %s", serial)
+	dv, err := s.OpenDevice(serial)
+	if err != nil {
+		panic(err)
+	}
+	defer dv.Close()
+
+	if err := dv.ForceDebug(); err != nil {
+		panic(err)
+	}
+
+	if err := dv.EnterSWDMode(); err != nil {
+		panic(err)
+	}
+
+	f, err := dv.GetFlashloader()
+	if err != nil {
+		panic(err)
+	}
+	if err := f.Unlock(); err != nil {
+		panic(err)
+	}
+	if err := f.Lock(); err != nil {
+		panic(err)
 	}
 }
 
@@ -39,75 +104,6 @@ func probeDevice(s *stlink.Stlink, serial string) {
 	if err != nil {
 		return
 	}
-	name, err := dv.Name()
-	if err == nil {
-		fmt.Printf(" name:    %s\n", name)
-	} else {
-		fmt.Printf(" name:    %v\n", err)
-	}
-	m, err := dv.Mode()
-	if err == nil {
-		fmt.Printf(" mode:    %s\n", m)
-	} else {
-		fmt.Printf(" mode:    %v\n", err)
-	}
-	ver, err := dv.Version()
-	if err == nil {
-		fmt.Printf(" version: %s\n", ver)
-	} else {
-		fmt.Printf(" version: %v\n", err)
-	}
-	v, err := dv.TargetVoltage()
-	if err == nil {
-		fmt.Printf(" voltage: %.3f\n", v)
-	} else {
-		fmt.Printf(" voltage: %v\n", err)
-	}
-	if v < 1 {
-		fmt.Printf(" target voltage too low!\n")
-		return
-	}
-	status, err := dv.Status()
-	if err == nil {
-		fmt.Printf(" status:  %s\n", status)
-	} else {
-		fmt.Printf(" status:  %v\n", err)
-	}
-	cid, err := dv.CoreID()
-	if err == nil {
-		fmt.Printf(" coreid:  %08x\n", cid)
-	} else {
-		fmt.Printf(" coreid:  %v\n", err)
-	}
-	cpu, err := dv.CpuID()
-	if err == nil {
-		fmt.Printf(" cpu:     %08x\n", cpu)
-	} else {
-		fmt.Printf(" cpu:     %v\n", err)
-	}
-	chip, err := dv.ChipID()
-	if err == nil {
-		fmt.Printf(" chip:    %08x\n", chip)
-	} else {
-		fmt.Printf(" chip:    %v\n", err)
-	}
-	dev, err := dv.DevID()
-	if err == nil {
-		fmt.Printf(" dev:     %03x\n", dev)
-	} else {
-		fmt.Printf(" dev:     %v\n", err)
-	}
-	pn, err := dv.CortexMPartNumber()
-	if err == nil {
-		fmt.Printf(" part-no: %s\n", pn)
-	} else {
-		fmt.Printf(" part-no: %v\n", err)
-	}
-	sz, err := dv.FlashSize()
-	if err == nil {
-		fmt.Printf(" flash:   %d\n", sz)
-	} else {
-		fmt.Printf(" flash:   %v\n", err)
-	}
+	fmt.Printf("%s", dv)
 	dv.Close()
 }

@@ -27,7 +27,7 @@ func (s StlinkMode) String() string {
 	return "unknown"
 }
 
-// GetMode reads the mode for an ST-link, see StlinkMode
+// Mode reads the mode for an ST-link, see StlinkMode
 func (d *Device) Mode() (StlinkMode, error) {
 	tx := make([]byte, cmdSize, cmdSize)
 	tx[0] = byte(stlinkCmdGetCurrentMode)
@@ -45,6 +45,20 @@ func (d *Device) Mode() (StlinkMode, error) {
 	default:
 		return StlinkModeUnknown, nil
 	}
+}
+
+func (d *Device) SetMode(mode StlinkMode) error {
+	cur, err := d.Mode()
+	if err != nil {
+		return fmt.Errorf("unable to determine current-mode: %v", err)
+	}
+	if cur == mode {
+		return nil
+	}
+	if cur != StlinkModeDebug {
+		// TODO return to debug
+	}
+	return errors.New("not implemented")
 }
 
 func (d *Device) Version() (string, error) {

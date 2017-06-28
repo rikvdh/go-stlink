@@ -2,6 +2,7 @@ package stlink
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/google/gousb"
 )
@@ -92,4 +93,79 @@ func (d *Device) read(n int) ([]byte, error) {
 		return nil, err
 	}
 	return rx, nil
+}
+
+func (d *Device) String() string {
+	s := ""
+	name, err := d.Name()
+	if err == nil {
+		s += fmt.Sprintf(" name:    %s\n", name)
+	} else {
+		s += fmt.Sprintf(" name:    %v\n", err)
+	}
+	m, err := d.Mode()
+	if err == nil {
+		s += fmt.Sprintf(" mode:    %s\n", m)
+	} else {
+		s += fmt.Sprintf(" mode:    %v\n", err)
+	}
+	ver, err := d.Version()
+	if err == nil {
+		s += fmt.Sprintf(" version: %s\n", ver)
+	} else {
+		s += fmt.Sprintf(" version: %v\n", err)
+	}
+	v, err := d.TargetVoltage()
+	if err == nil {
+		s += fmt.Sprintf(" voltage: %.3f\n", v)
+	} else {
+		s += fmt.Sprintf(" voltage: %v\n", err)
+	}
+	if v < 1 {
+		s += fmt.Sprintf(" target voltage too low!\n")
+		return s
+	}
+	status, err := d.Status()
+	if err == nil {
+		s += fmt.Sprintf(" status:  %s\n", status)
+	} else {
+		s += fmt.Sprintf(" status:  %v\n", err)
+	}
+	cid, err := d.CoreID()
+	if err == nil {
+		s += fmt.Sprintf(" coreid:  %08x\n", cid)
+	} else {
+		s += fmt.Sprintf(" coreid:  %v\n", err)
+	}
+	cpu, err := d.CpuID()
+	if err == nil {
+		s += fmt.Sprintf(" cpu:     %08x\n", cpu)
+	} else {
+		s += fmt.Sprintf(" cpu:     %v\n", err)
+	}
+	chip, err := d.ChipID()
+	if err == nil {
+		s += fmt.Sprintf(" chip:    %08x\n", chip)
+	} else {
+		s += fmt.Sprintf(" chip:    %v\n", err)
+	}
+	dev, err := d.DevID()
+	if err == nil {
+		s += fmt.Sprintf(" dev:     %03x\n", dev)
+	} else {
+		s += fmt.Sprintf(" dev:     %v\n", err)
+	}
+	pn, err := d.CortexMPartNumber()
+	if err == nil {
+		s += fmt.Sprintf(" part-no: %s\n", pn)
+	} else {
+		s += fmt.Sprintf(" part-no: %v\n", err)
+	}
+	sz, err := d.FlashSize()
+	if err == nil {
+		s += fmt.Sprintf(" flash:   %d\n", sz)
+	} else {
+		s += fmt.Sprintf(" flash:   %v\n", err)
+	}
+	return s
 }
