@@ -1,5 +1,10 @@
 language: go
 
+addons:
+  apt:
+    packages:
+      - libusb-1.0.0-dev
+
 go:
   - go1.7
   - go1.8
