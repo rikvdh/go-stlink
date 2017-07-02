@@ -1,0 +1,12 @@
+language: go
+
+go:
+  - go1.7
+  - go1.8
+  - tip
+
+script:
+  - make all
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
