@@ -90,7 +90,7 @@ func (d *Device) EnterSWDMode() error {
 	tx := make([]byte, cmdSize, cmdSize)
 	tx[0] = byte(stlinkCmdDebug)
 	tx[1] = byte(stlinkCmdDebugEnterMode)
-	tx[1] = byte(stlinkCmdDebugEnterSwd)
+	tx[2] = byte(stlinkCmdDebugEnterSwd)
 	return d.write(tx)
 }
 
