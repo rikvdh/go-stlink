@@ -6,9 +6,10 @@ addons:
       - libusb-1.0.0-dev
 
 go:
-  - go1.7
-  - go1.8
   - tip
+  - go1.11
+  - go1.10
+  - go1.9
 
 script:
   - make all
