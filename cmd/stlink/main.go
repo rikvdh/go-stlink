@@ -85,17 +85,6 @@ func runFlash(s *stlink.Stlink, serial string) {
 	if err := dv.EnterSWDMode(); err != nil {
 		panic(err)
 	}
-
-	f, err := dv.GetFlashloader()
-	if err != nil {
-		panic(err)
-	}
-	if err := f.Unlock(); err != nil {
-		panic(err)
-	}
-	if err := f.Lock(); err != nil {
-		panic(err)
-	}
 }
 
 func probeDevice(s *stlink.Stlink, serial string) {
