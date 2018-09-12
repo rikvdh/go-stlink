@@ -28,13 +28,13 @@ func (s *Stlink) Close() error {
 const (
 	stVID        gousb.ID = 0x0483
 	stlinkV1PID  gousb.ID = 0x3744
-	stlinkV2PID  gousb.ID = 0x3748
-	stlinkV21PID gousb.ID = 0x374b
+	StlinkV2PID  gousb.ID = 0x3748
+	StlinkV21PID gousb.ID = 0x374b
 )
 
 func (s *Stlink) probeAll() ([]*gousb.Device, error) {
 	return s.usbctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
-		if desc.Vendor == stVID && (desc.Product == stlinkV21PID || desc.Product == stlinkV2PID) {
+		if desc.Vendor == stVID && (desc.Product == StlinkV21PID || desc.Product == StlinkV2PID) {
 			return true
 		}
 		return false
@@ -63,7 +63,7 @@ func (s *Stlink) Probe() ([]Device, error) {
 			return nil, err
 		}
 		dev := Device{
-			desc:         d.Desc,
+			PID:          d.Desc.Product,
 			SerialNumber: sd,
 			opened:       false,
 		}
@@ -91,9 +91,9 @@ func (s *Stlink) OpenDevice(serial string) (*Device, error) {
 			return nil, err
 		}
 		dev := &Device{
-			desc:         d.Desc,
-			dev:          d,
+			PID:         d.Desc.Product,
 			SerialNumber: sd,
+			dev:          d,
 			opened:       true,
 		}
 		// We check if the device ID is hex-encoded, otherwise do so

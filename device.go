@@ -16,13 +16,14 @@ const (
 
 // Device represents a ST-link device
 type Device struct {
-	desc         *gousb.DeviceDesc
+	SerialNumber string
+	PID          gousb.ID
+
 	dev          *gousb.Device
 	interf       *gousb.Interface
 	doneFunc     func()
 	outEp        *gousb.OutEndpoint
 	inEp         *gousb.InEndpoint
-	SerialNumber string
 	opened       bool
 	coreState    StlinkStatus
 	cpuID        uint32
@@ -40,7 +41,7 @@ func (d *Device) init() error {
 	}
 
 	ep := stlinkUsbOutEpV2
-	if d.desc.Product == stlinkV21PID {
+	if d.PID == StlinkV21PID {
 		ep = stlinkUsbOutEpV21
 	}
 
@@ -88,13 +89,11 @@ func (d *Device) Close() error {
 }
 
 func (d *Device) Name() (string, error) {
-	switch d.desc.Product {
-	case stlinkV21PID:
-		return "ST-link V2-1", nil
-	case stlinkV1PID:
-		return "ST-link V1", nil
-	case stlinkV2PID:
+	switch d.PID {
+	case StlinkV2PID:
 		return "ST-link V2", nil
+	case StlinkV21PID:
+		return "ST-link V2-1", nil
 	}
 	return "", errors.New("unknown device")
 }
