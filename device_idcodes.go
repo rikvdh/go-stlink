@@ -95,6 +95,51 @@ const (
 	ChipFamilySTM32L4X6           ChipFamily = 0x461
 )
 
+type ChipFamilyGroup string
+
+const (
+	ChipFamilyGroupSTM32L0 ChipFamilyGroup = "stm32l0"
+	ChipFamilyGroupSTM32L1 ChipFamilyGroup = "stm32l1"
+	ChipFamilyGroupSTM32L4 ChipFamilyGroup = "stm32l4"
+	ChipFamilyGroupSTM32F0 ChipFamilyGroup = "stm32f0"
+	ChipFamilyGroupSTM32F1 ChipFamilyGroup = "stm32f1"
+	ChipFamilyGroupSTM32F2 ChipFamilyGroup = "stm32f2"
+	ChipFamilyGroupSTM32F3 ChipFamilyGroup = "stm32f3"
+	ChipFamilyGroupSTM32F4 ChipFamilyGroup = "stm32f4"
+	ChipFamilyGroupSTM32F7 ChipFamilyGroup = "stm32f7"
+)
+
+// GroupName gets the chip family group name (e.g "stm32f0", "stm32l0" ...)
+func (cf ChipFamily) Group() ChipFamilyGroup {
+	switch cf {
+	case ChipFamilySTM32F0, ChipFamilySTM32F0Can, ChipFamilySTM32F0Small,
+		ChipFamilySTM32F04, ChipFamilySTM32F09X:
+		return ChipFamilyGroupSTM32F0
+	case ChipFamilySTM32F1Connectivity, ChipFamilySTM32F1High, ChipFamilySTM32F1Low,
+	ChipFamilySTM32F1Medium, ChipFamilySTM32F1VLHigh, ChipFamilySTM32F1VLMedium, ChipFamilySTM32F1XL:
+		return ChipFamilyGroupSTM32F1
+	case ChipFamilySTM32F2:
+		return ChipFamilyGroupSTM32F2
+	case ChipFamilySTM32F3, ChipFamilySTM32F3Small, ChipFamilySTM32F303High,
+		ChipFamilySTM32F334, ChipFamilySTM32F37x:
+		return ChipFamilyGroupSTM32F3
+	case ChipFamilySTM32F4, ChipFamilySTM32F4DE, ChipFamilySTM32F4DSI, ChipFamilySTM32F4HD,
+		ChipFamilySTM32F4LP, ChipFamilySTM32F410, ChipFamilySTM32F411RE, ChipFamilySTM32F412,
+		ChipFamilySTM32F413, ChipFamilySTM32F446:
+		return ChipFamilyGroupSTM32F4
+	case ChipFamilySTM32F7, ChipFamilySTM32F7Advanced, ChipFamilySTM32F7Foundation:
+		return ChipFamilyGroupSTM32F7
+	case ChipFamilySTM32L0, ChipFamilySTM32L0Cat2, ChipFamilySTM32L0Cat5, ChipFamilySTM32L011:
+		return ChipFamilyGroupSTM32L0
+	case ChipFamilySTM32L1Cat2, ChipFamilySTM32L1High, ChipFamilySTM32L1MediumLow,
+		ChipFamilySTM32L1MediumHigh, ChipFamilySTM32L152RE:
+		return ChipFamilyGroupSTM32L1
+	case ChipFamilySTM32L4, ChipFamilySTM32L434X, ChipFamilySTM32L4X6:
+		return ChipFamilyGroupSTM32L4
+	}
+	return "unknown"
+}
+
 func (d *Device) DevID() (ChipFamily, error) {
 	id, err := d.ChipID()
 	return ChipFamily(id & 0xfff), err
